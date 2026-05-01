@@ -4,4 +4,4 @@
 /__pycache__
 *.pyc
 /.mlpconfig
-.DS_Store
+/.DS_Store
