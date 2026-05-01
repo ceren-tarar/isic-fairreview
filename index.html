@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ISIC FairReview</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#overview" aria-label="ISIC FairReview home">
+        <span class="brand-mark">FR</span>
+        <span>
+          <strong>ISIC FairReview</strong>
+          <small>Age and sex aware human review</small>
+        </span>
+      </a>
+      <nav aria-label="Page sections">
+        <a href="#overview">Overview</a>
+        <a href="#selection">Rereview Logic</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#eda">EDA Results</a>
+        <a href="#review-ui">Review UI</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="overview" class="hero section">
+        <div class="hero-copy">
+          <p class="eyebrow">ISIC 2019 fairness workflow</p>
+          <h1>Human-in-the-loop review for underrepresented age and sex groups.</h1>
+          <p class="lead">
+            This webpage summarizes a training support system that finds high-risk ISIC
+            2019 samples, routes them to human rereview, and exports training weights
+            for group-aware model learning.
+          </p>
+          <div class="hero-actions">
+            <a class="button primary" href="#review-ui">View review screen</a>
+            <a class="button secondary" href="#eda">See EDA results</a>
+          </div>
+          <p class="server-note" id="server-note">
+            Open through the local backend to enable review saving and training:
+            <code>python3 local_pipeline_server.py</code>
+          </p>
+        </div>
+        <aside class="hero-panel" aria-label="Dataset summary">
+          <div class="panel-header">
+            <span>Dataset status</span>
+            <strong>ISIC 2019</strong>
+          </div>
+          <div class="metrics-grid">
+            <div>
+              <span>Train</span>
+              <strong>25,331</strong>
+            </div>
+            <div>
+              <span>Test</span>
+              <strong>8,238</strong>
+            </div>
+            <div>
+              <span>Review queue</span>
+              <strong>3,489</strong>
+            </div>
+            <div>
+              <span>Fairness fields</span>
+              <strong>Age, Sex</strong>
+            </div>
+          </div>
+          <div class="mini-table">
+            <div><span>Underrepresented age x sex</span><strong>2,772</strong></div>
+            <div><span>Missing metadata</span><strong>437</strong></div>
+            <div><span>Rare diagnosis-group combo</span><strong>280</strong></div>
+          </div>
+        </aside>
+      </section>
+
+      <section id="selection" class="section">
+        <div class="section-heading">
+          <p class="eyebrow">Selection policy</p>
+          <h2>What gets sent to human rereview?</h2>
+          <p>
+            The queue is generated from training metadata and labels. A sample is
+            prioritized when it creates risk for subgroup evaluation or training quality.
+          </p>
+        </div>
+
+        <div class="rule-grid">
+          <article class="rule-card">
+            <span class="rule-number">01</span>
+            <h3>Missing age or sex</h3>
+            <p>
+              Missing demographic metadata blocks subgroup fairness evaluation, so these
+              cases are flagged first.
+            </p>
+            <code>age is missing OR sex is missing</code>
+          </article>
+          <article class="rule-card">
+            <span class="rule-number">02</span>
+            <h3>Underrepresented intersection</h3>
+            <p>
+              Samples from low-coverage age x sex groups are reviewed before they drive
+              training decisions.
+            </p>
+            <code>ratio_to_uniform &lt; 0.8</code>
+          </article>
+          <article class="rule-card">
+            <span class="rule-number">03</span>
+            <h3>Rare diagnosis within group</h3>
+            <p>
+              Rare diagnosis-by-group combinations are checked because label noise has
+              higher impact where examples are scarce.
+            </p>
+            <code>diagnosis_age_x_sex_n &lt; 25</code>
+          </article>
+        </div>
+      </section>
+
+      <section id="pipeline" class="section band">
+        <div class="section-heading">
+          <p class="eyebrow">Training intervention</p>
+          <h2>Pipeline of the project</h2>
+        </div>
+        <div class="pipeline">
+          <div class="step"><span>1</span><strong>Load ISIC CSVs</strong><small>Metadata and one-hot diagnosis labels</small></div>
+          <div class="step"><span>2</span><strong>Clean fields</strong><small>Age groups, sex labels, age x sex</small></div>
+          <div class="step"><span>3</span><strong>Audit fairness</strong><small>Representation metrics and split shift</small></div>
+          <div class="step"><span>4</span><strong>Build queue</strong><small>Missing, underrepresented, rare cases</small></div>
+          <div class="step"><span>5</span><strong>Human review</strong><small>Confirm, correct, hold out, second review</small></div>
+          <div class="step"><span>6</span><strong>Train model</strong><small>Reviewed labels and sample weights</small></div>
+          <div class="step"><span>7</span><strong>Evaluate by group</strong><small>Age, sex, age x sex performance</small></div>
+        </div>
+      </section>
+
+      <section id="eda" class="section">
+        <div class="section-heading">
+          <p class="eyebrow">EDA results</p>
+          <h2>What the metadata shows</h2>
+        </div>
+
+        <div class="stats-layout">
+          <article class="stat-panel">
+            <h3>Sex distribution</h3>
+            <div class="bar-row"><span>Train female</span><div><i style="width: 46.03%"></i></div><strong>46.03%</strong></div>
+            <div class="bar-row"><span>Train male</span><div><i style="width: 52.45%"></i></div><strong>52.45%</strong></div>
+            <div class="bar-row warning"><span>Train missing</span><div><i style="width: 1.52%"></i></div><strong>1.52%</strong></div>
+            <div class="bar-row"><span>Test female</span><div><i style="width: 45.97%"></i></div><strong>45.97%</strong></div>
+            <div class="bar-row"><span>Test male</span><div><i style="width: 49.92%"></i></div><strong>49.92%</strong></div>
+            <div class="bar-row warning"><span>Test missing</span><div><i style="width: 4.12%"></i></div><strong>4.12%</strong></div>
+          </article>
+
+          <article class="stat-panel">
+            <h3>Age distribution</h3>
+            <div class="age-bars">
+              <div><span>&lt;20</span><i style="height: 14%"></i><b>2.70</b></div>
+              <div><span>20s</span><i style="height: 22%"></i><b>4.20</b></div>
+              <div><span>30s</span><i style="height: 59%"></i><b>11.25</b></div>
+              <div><span>40s</span><i style="height: 100%"></i><b>19.07</b></div>
+              <div><span>50s</span><i style="height: 96%"></i><b>18.39</b></div>
+              <div><span>60s</span><i style="height: 85%"></i><b>16.23</b></div>
+              <div><span>70s</span><i style="height: 81%"></i><b>15.46</b></div>
+              <div><span>80+</span><i style="height: 58%"></i><b>10.97</b></div>
+            </div>
+            <p class="note">Bars show training percentages. Test has more 80+ patients: 15.87% vs 10.97% in train.</p>
+          </article>
+        </div>
+
+        <div class="stats-layout two">
+          <article class="stat-panel">
+            <h3>Training diagnosis counts</h3>
+            <div class="diagnosis-list">
+              <div><span>NV</span><i style="width: 100%"></i><strong>12,875</strong></div>
+              <div><span>MEL</span><i style="width: 35%"></i><strong>4,522</strong></div>
+              <div><span>BCC</span><i style="width: 26%"></i><strong>3,323</strong></div>
+              <div><span>BKL</span><i style="width: 20%"></i><strong>2,624</strong></div>
+              <div><span>AK</span><i style="width: 7%"></i><strong>867</strong></div>
+              <div><span>SCC</span><i style="width: 5%"></i><strong>628</strong></div>
+              <div><span>VASC</span><i style="width: 2%"></i><strong>253</strong></div>
+              <div><span>DF</span><i style="width: 2%"></i><strong>239</strong></div>
+            </div>
+          </article>
+
+          <article class="stat-panel">
+            <h3>Representation warnings</h3>
+            <table>
+              <thead>
+                <tr><th>Attribute</th><th>Split</th><th>Smallest group</th><th>Ratio</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Sex</td><td>Train</td><td>missing</td><td>0.0289</td></tr>
+                <tr><td>Age</td><td>Train</td><td>missing</td><td>0.0905</td></tr>
+                <tr><td>Age x sex</td><td>Train</td><td>missing | female</td><td>0.0102</td></tr>
+                <tr><td>Age x sex</td><td>Test</td><td>70-79 | missing</td><td>0.0021</td></tr>
+              </tbody>
+            </table>
+            <p class="note">Lower ratios mean stronger imbalance compared with the largest group.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="review-ui" class="section band">
+        <div class="section-heading">
+          <p class="eyebrow">Guided workflow</p>
+          <h2>Start with blinded human review</h2>
+          <p>
+            Reviewers see one case at a time. The ground-truth diagnosis is hidden
+            during the first pass; if the reviewer disagrees, the system asks for a
+            second explanation before moving forward.
+          </p>
+          <button id="start-review" class="button primary" type="button">Start review</button>
+        </div>
+
+        <div class="workflow-status">
+          <div class="phase active" id="phase-review"><span>1</span><strong>Initial review</strong></div>
+          <div class="phase" id="phase-training"><span>2</span><strong>Training</strong></div>
+          <div class="phase" id="phase-rereview"><span>3</span><strong>Rereview</strong></div>
+          <div class="phase" id="phase-complete"><span>4</span><strong>Complete</strong></div>
+        </div>
+
+        <div class="review-shell is-hidden" id="review-workspace">
+          <aside class="queue-panel" aria-label="Review queue">
+            <div class="panel-header">
+              <span>Session progress</span>
+              <strong id="queue-count">0 / 5</strong>
+            </div>
+            <div class="progress-track"><i id="review-progress" style="width: 0%"></i></div>
+            <p class="note">Complete this small review batch before training starts.</p>
+            <div id="queue-list">
+              <button class="queue-item active" data-case="0" type="button">
+                <span>ISIC_0015219</span>
+                <strong>Missing metadata</strong>
+                <small>Diagnosis hidden</small>
+              </button>
+            </div>
+          </aside>
+
+          <article class="review-card">
+            <div class="image-frame">
+              <img id="case-image" src="ISIC_2019_Training_Input/ISIC_0015219_downsampled.jpg" alt="Selected ISIC lesion image" />
+            </div>
+            <div class="review-details">
+              <div class="case-title">
+                <span id="case-id">ISIC_0015219_downsampled</span>
+                <strong id="case-reason">missing age or sex metadata</strong>
+              </div>
+
+              <div class="instructions" id="review-instructions">
+                <strong>Instructions</strong>
+                <p>
+                  Inspect the lesion image and available metadata. Select the diagnosis
+                  you believe is correct. The original label is hidden until you submit.
+                </p>
+              </div>
+
+              <div class="hidden-label">
+                <span>Original label</span>
+                <strong id="hidden-label-text">Hidden until submitted</strong>
+              </div>
+
+              <div class="readonly-meta">
+                <div><span>Age group</span><strong id="age-group-text">missing</strong></div>
+                <div><span>Sex</span><strong id="sex-text">male</strong></div>
+                <div><span>Age x sex</span><strong id="age-sex-text">missing | male</strong></div>
+              </div>
+
+              <div class="choice-block">
+                <span>Your diagnosis selection</span>
+                <div class="radio-grid" id="diagnosis-options">
+                  <label><input type="radio" name="diagnosis" value="MEL" /> MEL</label>
+                  <label><input type="radio" name="diagnosis" value="NV" /> NV</label>
+                  <label><input type="radio" name="diagnosis" value="BCC" /> BCC</label>
+                  <label><input type="radio" name="diagnosis" value="BKL" /> BKL</label>
+                  <label><input type="radio" name="diagnosis" value="AK" /> AK</label>
+                  <label><input type="radio" name="diagnosis" value="SCC" /> SCC</label>
+                  <label><input type="radio" name="diagnosis" value="VASC" /> VASC</label>
+                  <label><input type="radio" name="diagnosis" value="DF" /> DF</label>
+                </div>
+              </div>
+
+              <div class="choice-block">
+                <span>Reviewer confidence</span>
+                <div class="radio-grid compact" id="confidence-options">
+                  <label><input type="radio" name="confidence" value="high" /> High</label>
+                  <label><input type="radio" name="confidence" value="medium" checked /> Medium</label>
+                  <label><input type="radio" name="confidence" value="low" /> Low</label>
+                </div>
+              </div>
+
+              <label>
+                Reviewer notes
+                <textarea id="review-notes" rows="3" placeholder="Optional note for the audit log"></textarea>
+              </label>
+              <div class="action-row" aria-label="Reviewer actions">
+                <button type="button" class="primary-action" id="submit-review">Submit review</button>
+                <button type="button" data-review-action="mark uncertain">Mark uncertain</button>
+                <button type="button" class="danger" data-review-action="exclude from training">Hold out</button>
+              </div>
+              <div class="challenge-panel is-hidden" id="challenge-panel">
+                <h3>Label disagreement</h3>
+                <p id="challenge-copy">Ground truth says X. Why do you think this is not correct?</p>
+                <label>
+                  Second review explanation
+                  <textarea id="challenge-notes" rows="3" placeholder="Explain the disagreement or what should be checked by an expert"></textarea>
+                </label>
+                <button type="button" id="submit-challenge">Save second review and continue</button>
+              </div>
+              <p class="status-line" id="review-status">Select a queue item and save a review decision.</p>
+
+              <div class="training-export">
+                <h3>What happens after this batch?</h3>
+                <p>
+                  Once the initial review batch is complete, training can start with
+                  reviewed labels, hold-out decisions, and fairness-aware sample weights.
+                </p>
+                <code>sample_weight = group_weight × diagnosis_weight</code>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="training" class="section is-hidden">
+        <div class="section-heading">
+          <p class="eyebrow">Live pipeline</p>
+          <h2>Start training and inspect rereview needs</h2>
+          <p>
+            The local backend trains a lightweight image-plus-metadata classifier using
+            reviewed labels and fairness-aware sample weights. After validation, weak
+            age x sex groups and low-confidence errors become a post-training rereview queue.
+          </p>
+        </div>
+        <div class="training-grid">
+          <article class="stat-panel">
+            <h3>Training controls</h3>
+            <div class="field-grid">
+              <label>
+                Max training rows
+                <select id="max-train-rows">
+                  <option>1500</option>
+                  <option selected>5000</option>
+                  <option>9000</option>
+                </select>
+              </label>
+              <label>
+                Max validation rows
+                <select id="max-validation-rows">
+                  <option>500</option>
+                  <option selected>1500</option>
+                  <option>2500</option>
+                </select>
+              </label>
+            </div>
+            <div class="training-actions">
+              <button id="start-training" class="train-button" type="button">Start training</button>
+              <button id="interrupt-training" class="interrupt-button is-hidden" type="button">Interrupt training</button>
+            </div>
+            <p class="status-line" id="training-status">Training has not started.</p>
+            <div class="progress-track training-progress"><i id="training-progress" style="width: 0%"></i></div>
+            <div class="metric-strip" id="training-metrics">
+              <div><span>Accuracy</span><strong>-</strong></div>
+              <div><span>Balanced accuracy</span><strong>-</strong></div>
+              <div><span>Rereview</span><strong>-</strong></div>
+            </div>
+          </article>
+
+          <article class="stat-panel">
+            <h3>Post-training rereview</h3>
+            <div class="rereview-table" id="rereview-table">
+              <p class="note">Run training to populate post-training rereview cases.</p>
+            </div>
+            <div class="rereview-card is-hidden" id="rereview-card">
+              <div class="image-frame compact">
+                <img id="rereview-image" src="ISIC_2019_Training_Input/ISIC_0015219_downsampled.jpg" alt="Rereview lesion image" />
+              </div>
+              <div class="case-title">
+                <span id="rereview-id">Case</span>
+                <strong id="rereview-reason">Rereview reason</strong>
+              </div>
+              <p id="rereview-context" class="note"></p>
+              <div class="choice-block">
+                <span>Rereview diagnosis</span>
+                <div class="radio-grid" id="rereview-diagnosis-options">
+                  <label><input type="radio" name="rereview-diagnosis" value="MEL" /> MEL</label>
+                  <label><input type="radio" name="rereview-diagnosis" value="NV" /> NV</label>
+                  <label><input type="radio" name="rereview-diagnosis" value="BCC" /> BCC</label>
+                  <label><input type="radio" name="rereview-diagnosis" value="BKL" /> BKL</label>
+                  <label><input type="radio" name="rereview-diagnosis" value="AK" /> AK</label>
+                  <label><input type="radio" name="rereview-diagnosis" value="SCC" /> SCC</label>
+                  <label><input type="radio" name="rereview-diagnosis" value="VASC" /> VASC</label>
+                  <label><input type="radio" name="rereview-diagnosis" value="DF" /> DF</label>
+                </div>
+              </div>
+              <div class="choice-block">
+                <span>Rereview confidence</span>
+                <div class="radio-grid compact" id="rereview-confidence-options">
+                  <label><input type="radio" name="rereview-confidence" value="high" /> High</label>
+                  <label><input type="radio" name="rereview-confidence" value="medium" checked /> Medium</label>
+                  <label><input type="radio" name="rereview-confidence" value="low" /> Low</label>
+                </div>
+              </div>
+              <label>
+                Rereview comments
+                <textarea id="rereview-notes" rows="3" placeholder="Comment on the model error or label concern"></textarea>
+              </label>
+              <button type="button" id="submit-rereview">Submit rereview</button>
+              <p class="status-line" id="rereview-status"></p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="complete" class="section is-hidden">
+        <div class="completion-panel">
+          <p class="eyebrow">Workflow complete</p>
+          <h2>Review completed successfully.</h2>
+          <p>
+            Initial human review, fairness-aware training, and post-training rereview
+            have all been completed for this session.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <strong>ISIC FairReview</strong>
+      <span>Static HTML/CSS prototype for CS540 AI ethics project</span>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
