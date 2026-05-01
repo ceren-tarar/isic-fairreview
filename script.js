@@ -67,7 +67,7 @@ const rereviewStatus = document.querySelector("#rereview-status");
 const completeSection = document.querySelector("#complete");
 
 function imagePath(imageId) {
-  return `ISIC_2019_Training_Input/${imageId}.jpg`;
+  return `data/ISIC_2019_Training_Input/${imageId}.jpg`;
 }
 
 async function api(path, options = {}) {

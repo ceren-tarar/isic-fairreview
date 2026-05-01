@@ -28,6 +28,32 @@ The project has four main outputs:
 
 The UI is not meant to replace medical expertise. It is a workflow tool for surfacing cases that may need expert verification before being used in model training.
 
+## Data Setup
+
+The ISIC 2019 data is not committed to this repository. Put all downloaded ISIC 2019 files inside a local `data/` folder at the project root.
+
+Expected layout:
+
+```text
+data/
+  ISIC_2019_Training_Metadata.csv
+  ISIC_2019_Training_GroundTruth.csv
+  ISIC_2019_Test_Metadata.csv
+  ISIC_2019_Test_GroundTruth.csv
+  ISIC_2019_Training_Input/
+    ISIC_*.jpg
+  ISIC_2019_Test_Input/
+    ISIC_*.jpg
+```
+
+The app, backend, and EDA notebook all read from this `data/` folder.
+
+Download source:
+
+```text
+https://challenge.isic-archive.com/data/#2019
+```
+
 ## 2. How We Select What Needs To Be Rereviewed
 
 The rereview queue is generated from the training split only.
@@ -364,19 +390,19 @@ python3 -m venv .venv2
 .venv2/bin/python local_pipeline_server.py
 ```
 
-The app reads these files from the project root:
+The app reads these files from the `data/` folder:
 
 ```text
-ISIC_2019_Training_Metadata.csv
-ISIC_2019_Training_GroundTruth.csv
-ISIC_2019_Test_Metadata.csv
-ISIC_2019_Test_GroundTruth.csv
+data/ISIC_2019_Training_Metadata.csv
+data/ISIC_2019_Training_GroundTruth.csv
+data/ISIC_2019_Test_Metadata.csv
+data/ISIC_2019_Test_GroundTruth.csv
 ```
 
 If training images are available in:
 
 ```text
-ISIC_2019_Training_Input/
+data/ISIC_2019_Training_Input/
 ```
 
 then the review screen displays the lesion image. If the image file is not available yet, the app still allows metadata and label review.
@@ -406,3 +432,8 @@ post_training_rereview.csv
 ```
 
 The webpage displays the post-training rereview queue automatically after training finishes.
+
+## References
+
+- ISIC Challenge data page, 2019 dataset: https://challenge.isic-archive.com/data/#2019
+- ISIC 2019 Challenge: BCN_20000, HAM10000, and MSK datasets provided through the International Skin Imaging Collaboration archive.

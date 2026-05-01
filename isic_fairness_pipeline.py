@@ -38,6 +38,7 @@ POST_TRAINING_REVIEW_COLUMNS = [
 @dataclass(frozen=True)
 class IsicPaths:
     root: Path
+    data_dir: Path
     train_metadata: Path
     train_ground_truth: Path
     test_metadata: Path
@@ -49,14 +50,16 @@ class IsicPaths:
     @classmethod
     def from_root(cls, root: Path | str) -> "IsicPaths":
         root = Path(root)
+        data_dir = root / "data"
         return cls(
             root=root,
-            train_metadata=root / "ISIC_2019_Training_Metadata.csv",
-            train_ground_truth=root / "ISIC_2019_Training_GroundTruth.csv",
-            test_metadata=root / "ISIC_2019_Test_Metadata.csv",
-            test_ground_truth=root / "ISIC_2019_Test_GroundTruth.csv",
-            train_images=root / "ISIC_2019_Training_Input",
-            test_images=root / "ISIC_2019_Test_Input",
+            data_dir=data_dir,
+            train_metadata=data_dir / "ISIC_2019_Training_Metadata.csv",
+            train_ground_truth=data_dir / "ISIC_2019_Training_GroundTruth.csv",
+            test_metadata=data_dir / "ISIC_2019_Test_Metadata.csv",
+            test_ground_truth=data_dir / "ISIC_2019_Test_GroundTruth.csv",
+            train_images=data_dir / "ISIC_2019_Training_Input",
+            test_images=data_dir / "ISIC_2019_Test_Input",
             reviews=root / "human_reviews.csv",
         )
 
